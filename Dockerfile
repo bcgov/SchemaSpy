@@ -62,7 +62,9 @@ RUN set -x \
 
 ##################  End of Java install
 
+################## Install Graphviz
 
+apt-get install -y --no-install-recommends graphviz
  
 
 ################## Node install - from https://github.com/nodesource/docker-node/blob/master/debian/jessie/node/6.7.0/Dockerfile
