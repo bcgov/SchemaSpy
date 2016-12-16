@@ -65,7 +65,7 @@ RUN set -x \
 ################## Install Graphviz
 
 RUN apt-get update \
-    && install -y graphviz \
+    && apt-get install -y graphviz \
 	&& rm -rf /var/lib/apt/lists/*
  
 
