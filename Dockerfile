@@ -65,12 +65,6 @@ RUN set -x \
 
  
 
-COPY . /app
-WORKDIR /app
-	
-# java -jar schemaspy-6.0.0-jar-with-dependencies.jar -t pgsql -db test -s public -host app-database -port 5432 -u test -p test161107 -o library -dp postgresql-9.4-1201.jdbc4.jar
-
-
 ################## Node install - from https://github.com/nodesource/docker-node/blob/master/debian/jessie/node/6.7.0/Dockerfile
 
 
@@ -90,3 +84,21 @@ CMD ["npm","start"]
 RUN apt-get update \
  && apt-get upgrade -y --force-yes \
  && rm -rf /var/lib/apt/lists/*;
+ 
+
+################# Install and run the Node App.
+ 
+RUN mkdir -p /app
+COPY . /app
+
+WORKDIR /app
+
+EXPOSE 8080
+
+RUN npm install
+
+RUN chown -R 1001:0 /app && chmod -R ug+rwx /app
+USER 1001
+
+CMD [ "npm", "start" ]
+ 
