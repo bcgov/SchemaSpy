@@ -64,7 +64,9 @@ RUN set -x \
 
 ################## Install Graphviz
 
-RUN apt-get install -y --no-install-recommends graphviz
+RUN apt-get apt-get update \
+    && install -y graphviz \
+	&& rm -rf /var/lib/apt/lists/*
  
 
 ################## Node install - from https://github.com/nodesource/docker-node/blob/master/debian/jessie/node/6.7.0/Dockerfile
