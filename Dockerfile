@@ -47,9 +47,7 @@ ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 RUN set -x \
 	&& apt-get update \
 	&& apt-get install -y -t jessie-backports openjdk-8-jre-headless ca-certificates-java \
-    && rm -rf /var/lib/apt/lists/* \
-	&& [ "$JAVA_HOME" = "$(docker-java-home)" ]
-
+    && rm -rf /var/lib/apt/lists/*
 
 RUN set -x \
 	&& apt-get update \
