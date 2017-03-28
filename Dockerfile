@@ -51,10 +51,9 @@ RUN set -x \
 
 RUN set -x \
 	&& apt-get update \
-	&& apt-get install -y openjdk-8-jre \
+	&& apt-get install -y openjdk-8-jdk \
     && rm -rf /var/lib/apt/lists/* \
 	&& [ "$JAVA_HOME" = "$(docker-java-home)" ]
-
 
 ##################  End of Java install
 
