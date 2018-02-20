@@ -1,103 +1,108 @@
-FROM buildpack-deps:jessie-scm
- 
-RUN apt-get update && apt-get install build-essential bzip2 -y
+FROM openjdk:jre-alpine
 
-##### Node install -  from https://github.com/nodesource/docker-node/blob/master/base/debian/jessie/Dockerfile
+# 
+RUN apk update && \
+    apk upgrade
 
-RUN apt-get update \
- && apt-get install -y --force-yes --no-install-recommends\
-      apt-transport-https \
-      ssh-client \
-      build-essential \
-      curl \
-      ca-certificates \
-      git \
-      libicu-dev \
-      'libicu[0-9][0-9].*' \
-      lsb-release \
-      python-all \
-      rlwrap \
- && rm -rf /var/lib/apt/lists/*;
+# ===================================================================================================================================================================
+# Install Caddy
+# Refs:
+# - https://github.com/ZZROTDesign/alpine-caddy
+# - https://github.com/mholt/caddy
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------------
+RUN apk update && \
+    apk --no-cache add \
+        tini \
+        git \
+        openssh-client && \
+    apk --no-cache add --virtual \
+        devs \
+        tar \
+        curl
 
-##### Get the Open JDK.  From https://github.com/docker-library/openjdk/blob/e6e9cf8b21516ba764189916d35be57486203c95/8-jdk/Dockerfile
+# Install Caddy Server, and All Middleware
+RUN curl -L "https://github.com/mholt/caddy/releases/download/v0.10.10/caddy_v0.10.10_linux_amd64.tar.gz" \
+    | tar --no-same-owner -C /usr/bin/ -xz caddy
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-		bzip2 \
-		unzip \
-		xz-utils \
-	&& rm -rf /var/lib/apt/lists/*
+# Remove build devs
+RUN apk del devs
 
-RUN echo 'deb http://deb.debian.org/debian jessie-backports main' > /etc/apt/sources.list.d/jessie-backports.list
+# Add the default Caddyfile
+COPY Caddyfile /etc/Caddyfile
 
-# Default to UTF-8 file.encoding
-ENV LANG C.UTF-8
+ENTRYPOINT ["/sbin/tini"]
+# ===================================================================================================================================================================
 
-# add a simple script that can auto-detect the appropriate JAVA_HOME value
-# based on whether the JDK or only the JRE is installed
-RUN { \
-		echo '#!/bin/sh'; \
-		echo 'set -e'; \
-		echo; \
-		echo 'dirname "$(dirname "$(readlink -f "$(which javac || which java)")")"'; \
-	} > /usr/local/bin/docker-java-home \
-	&& chmod +x /usr/local/bin/docker-java-home
+# ===================================================================================================================================================================
+# Update with OpenShifty Stuff
+# Refs: 
+# - https://github.com/BCDevOps/s2i-caddy
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Create the location where we will store our content, and fiddle the permissions so we will be able to write to it.
+# Also twiddle the permissions on the Caddyfile so we will be able to overwrite it with a user-provided one if desired.
+RUN mkdir -p /var/www/html && \
+    chmod g+w /var/www/html && \
+    chmod g+w /etc/Caddyfile
 
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
-
-RUN set -x \
-	&& apt-get update \
-	&& apt-get install -y -t jessie-backports openjdk-8-jre-headless ca-certificates-java \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN set -x \
-	&& apt-get update \
-	&& apt-get install -y openjdk-8-jdk \
-    && rm -rf /var/lib/apt/lists/* \
-	&& [ "$JAVA_HOME" = "$(docker-java-home)" ]
-
-##################  End of Java install
-
-################## Install Graphviz
-
-RUN apt-get update \
-    && apt-get install -y graphviz \
-	&& rm -rf /var/lib/apt/lists/*
- 
-
-################## Node install - from https://github.com/nodesource/docker-node/blob/master/debian/jessie/node/6.7.0/Dockerfile
-
-
-RUN curl https://deb.nodesource.com/node_6.x/pool/main/n/nodejs/nodejs_6.7.0-1nodesource1~jessie1_amd64.deb > node.deb \
- && dpkg -i node.deb \
- && rm node.deb
-
-RUN npm install -g pangyp\
- && ln -s $(which pangyp) $(dirname $(which pangyp))/node-gyp\
- && npm cache clear\
- && node-gyp configure || echo ""
-
-ENV NODE_ENV production
-WORKDIR /usr/src/app
-CMD ["npm","start"]
-
-RUN apt-get update \
- && apt-get upgrade -y --force-yes \
- && rm -rf /var/lib/apt/lists/*;
- 
-
-################# Install and run the Node App.
- 
-RUN mkdir -p /app
-COPY . /app
-
-WORKDIR /app
-
+# Expose the port for the container to Caddy
+# If you chnage this you need to update the Caddy configuration.
 EXPOSE 8080
+# ===================================================================================================================================================================
 
-RUN npm install
+# ===================================================================================================================================================================
+# Install SchemaSpy
+# Refs: 
+# - https://github.com/cywolf/schemaspy-docker
+# - https://github.com/schemaspy/schemaspy
+# - http://schemaspy.readthedocs.io/en/latest/index.html
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ENV LC_ALL C
 
-RUN chown -R 1001:0 /app && chmod -R ug+rwx /app
+# Define the default output directory for SchemaSpy
+# If you change this you will need to update the Caddy configuration.
+ENV OUTPUT_PATH=/var/www/html
+
+# Define the default versions for the image
+ENV SCHEMA_SPY_VERSION=6.0.0-rc2
+ENV POSTGRESQL_VERSION=42.2.1
+ENV MYSQL_VERSION=6.0.6
+ENV SQL_LITE_VERSION=3.18.0
+
+WORKDIR /app/
+
+# Install SchemaSpy
+# Installing librsvg fixes issues with generating the SchemaSpy output; https://github.com/schemaspy/schemaspy/issues/33
+#
+# When copying drivers into the image, use the <databaseType>-jdbc.jar naming convention.  See the code below for examples.
+#
+RUN apk update && \
+    apk add --no-cache \
+        wget \
+        ca-certificates \
+        librsvg \
+        graphviz \
+        ttf-ubuntu-font-family && \
+    mkdir lib && \
+    wget -nv -O lib/schemaspy-$SCHEMA_SPY_VERSION.jar https://github.com/schemaspy/schemaspy/releases/download/v$SCHEMA_SPY_VERSION/schemaspy-$SCHEMA_SPY_VERSION.jar && \
+    cp lib/schemaspy-$SCHEMA_SPY_VERSION.jar lib/schemaspy.jar && \
+    wget -nv -O lib/pgsql-jdbc.jar http://central.maven.org/maven2/org/postgresql/postgresql/$POSTGRESQL_VERSION/postgresql-$POSTGRESQL_VERSION.jar && \
+    wget -nv -O lib/mysql-jdbc.jar http://central.maven.org/maven2/mysql/mysql-connector-java/$MYSQL_VERSION/mysql-connector-java-$MYSQL_VERSION.jar && \
+    wget -nv -O lib/sqlite-jdbc.jar http://central.maven.org/maven2/org/xerial/sqlite-jdbc/$SQL_LITE_VERSION/sqlite-jdbc-$SQL_LITE_VERSION.jar && \
+    apk del \
+        wget \
+        ca-certificates
+
+RUN mkdir -p /app
+WORKDIR /app/
+
+# Copy script(s) and configuration into the image.
+COPY start.sh conf ./
+
+# Twiddle the permissions on ensure things can be run as an arbitrary user.
+RUN chown -R 1001:0 /app && \
+    chmod -R ug+rwx /app
+
 USER 1001
 
-CMD [ "npm", "start" ]
- 
+CMD [ "sh", "start.sh" ]
+# ===================================================================================================================================================================
