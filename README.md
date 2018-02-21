@@ -128,6 +128,40 @@ The resulting SchemaSpy command looks something like this;
 java -jar lib/schemaspy.jar -t "orathin" -db "CUAT" -dp "lib/ora-jdbc.jar" -s "COLIN_MGR_UAT" -cat "CUAT.bcgov" -u "username" -p "*****" -host "hostname:portnumber" -o /var/www/html
 ```
 
+### Oracle - Through PostgreSQL oracle-fdw
+
+**Work in progress ...**
+
+A custom database configuration, [pgsql-oracle-fdw.properties](./conf/pgsql-oracle-fdw.properties), has been started for this purpose.
+
+This allows SchemaSpy to query and graph the Foreign tables imported into PostgreSQL by oracle-fdw.
+
+*Current Limitations*
+
+The oracle-fdw import process does not import any of the table constraints/relationships for any of the imported tables: since it wouldn't make sense to have constraints on the foreign tables, because PostgreSQL cannot guarantee that these constraints would be satisfied.
+
+Therefore, SchemaSpy will see the tables, but will be unable to wire up the relationships between the tables.  The result is a set of *orphaned* tables.
+
+The recommended approach to fix this issue is to define a set of foreign tables on Oracle's catalog tables.  From there it should be possible to write a custom `selectCheckConstraintsSql` query for the `pgsql-oracle-fdw.properties` file that can provide SchemaSpy with the information it requires to wire the relationships between the tables.
+
+This requires updates to the following projects;
+* [openshift-postgresql-oracle_fdw](https://github.com/bcgov/openshift-postgresql-oracle_fdw)
+  * Update to import the Oracle catalog tables.
+
+* [SchemaSpy - this project](https://github.com/bcgov/SchemaSpy)
+  * Write and test a custom `selectCheckConstraintsSql` query for the `pgsql-oracle-fdw.properties` file.
+
+Example Configuration:
+
+| Name | Value | Description |
+| ---- | ------- | ------- |
+| DATABASE_TYPE | pgsql-oracle-fdw | Tells SchemaSpy to use the `pgsql-oracle-fdw.properties` configuration file. |
+| DATABASE_NAME | BC_REGISTRIES | The name of the database from the PostgrSQL perspective. |
+| DATABASE_SCHEMA | bc_registries | The name of the schema from the PostgrSQL perspective. |
+| DATABASE_USER | username | The username for the related PostgrSQL database. |
+| DATABASE_PASSWORD | ***** | The password for the related PostgrSQL database. |
+| DATABASE_HOST | postgresql-oracle-fdw | The host of the PostgrSQL database. |
+
 ## Code of Conduct
 
 Please refer to the [Code of Conduct](./CODE_OF_CONDUCT.md) 
