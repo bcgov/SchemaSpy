@@ -1,6 +1,5 @@
 FROM openjdk:jre-alpine
 
-# 
 RUN apk update && \
     apk upgrade
 
@@ -68,6 +67,7 @@ ENV POSTGRESQL_VERSION=42.2.1
 ENV MYSQL_VERSION=6.0.6
 ENV SQL_LITE_VERSION=3.18.0
 
+RUN mkdir -p /app
 WORKDIR /app/
 
 # Install SchemaSpy
@@ -91,9 +91,6 @@ RUN apk update && \
     apk del \
         wget \
         ca-certificates
-
-RUN mkdir -p /app
-WORKDIR /app/
 
 # Copy script(s) and configuration into the image.
 COPY start.sh conf ./
