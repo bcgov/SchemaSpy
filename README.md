@@ -100,7 +100,7 @@ docker run -ti --rm --name schemaspy \
 
 ### Oracle
 
-Due to licensing limitations, the JDBC drivers for Oracle are not included in the build image.
+Due to licensing limitations, the JDBC drivers for Oracle are not included in the repository.
 
 Links to the drivers can be found here;
 * http://www.oracle.com/technetwork/database/features/jdbc/index-091264.html
@@ -108,7 +108,12 @@ Links to the drivers can be found here;
 
 Using the Oracle Thin drivers it is easy to connect to an Oracle database.
 
-The following assumes you have (somehow) included the Oracle drivers in the image, and they have been copied into `/app/lib/` as `ora-jdbc.jar`; for example ojdbc8.jar has been copied into `/app/lib/ora-jdbc.jar`.
+The following configuraiton assumes you have downloaded the jar and copied it into the `./lib` folder of your working copy and run the following commands to generate the base image followed by the image containing the Oracle JDBC drivers.
+
+```
+docker build -t 'schema-spy' .
+docker build -f Dockerfile.oracle -t 'schema-spy-with-oracle-jdbc' .
+```
 
 Configuration:
 
