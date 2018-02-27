@@ -11,7 +11,10 @@ USER root
 # Download and copy the driver into your local ./lib directory before building.
 # The JDBC drivers for Oracle are not included in the repository to avoid licensing issues.
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-COPY ./lib/ojdbc8.jar lib/ora-jdbc.jar
+# Define the version(s) for the image
+ENV ORACLE_JDBC_VERSION=8
+
+COPY ./lib/ojdbc$ORACLE_JDBC_VERSION.jar lib/ora-jdbc.jar
 # ===================================================================================================================================================================
 
 # ===================================================================================================================================================================
