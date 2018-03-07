@@ -16,7 +16,7 @@ An example of a deployment template for use with a custom instance for documenti
 
 ## [schema-spy-oracle-basicauth-deploy.json](schema-spy-oracle-basicauth-deploy.json)
 
-An example of how to add basic authentication to a SchemSpy instance.  This one builds on top of the Oracle template.
+An example of how to add basic authentication to a SchemaSpy instance.  This one builds on top of the Oracle template.
 
 ## [Caddyfile](Caddyfile)
 
