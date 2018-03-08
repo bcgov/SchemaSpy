@@ -288,8 +288,8 @@
       "name": "DATABASE_HOST",
       "displayName": "Database Host",
       "required": true,
-      "description": "The host name for the database.",
-      "value": "142.34.88.17:1521"
+      "description": "The host name (or ip address) for the database server; override to match your environment.  In the case of Oracle databases this must be a <hostname|ipaddress>:<port> pair even if using the default Oracle port; a requirement of the Oracle Thin SchemaSpy process.",
+      "value": "hostIp:hostPort"
     },
     {
       "name": "DATABASE_DRIVER",

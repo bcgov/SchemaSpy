@@ -205,7 +205,7 @@
     },
     {
       "name": "DATABASE_HOST",
-      "displayName": "Database Host Name",
+      "displayName": "The host name (or ip address) for the database server; override to match your environment.  In the case of Oracle databases this must be a <hostname|ipaddress>:<port> pair even if using the default Oracle port; a requirement of the Oracle Thin SchemaSpy process.",
       "required": true,
       "value": "postgresql"
     },
