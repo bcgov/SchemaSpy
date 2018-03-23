@@ -115,6 +115,8 @@ docker build -t 'schema-spy' .
 docker build -f Dockerfile.oracle -t 'schema-spy-with-oracle-jdbc' .
 ```
 
+You can then use the [oc-push-image.sh](https://github.com/BCDevOps/openshift-developer-tools/blob/master/bin/oc-push-image.sh) from [OpenShift Scripts](https://github.com/BCDevOps/openshift-developer-tools/blob/master/bin/README.md) to push the image to your OpenShift project.
+
 Configuration:
 
 | Name | Value | Description |
