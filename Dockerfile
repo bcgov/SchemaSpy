@@ -9,6 +9,8 @@ RUN apk update && \
 # - https://github.com/ZZROTDesign/alpine-caddy
 # - https://github.com/mholt/caddy
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ENV CADDY_VERSION=0.11.1
+
 RUN apk update && \
     apk --no-cache add \
         tini \
@@ -20,7 +22,7 @@ RUN apk update && \
         curl
 
 # Install Caddy Server, and All Middleware
-RUN curl -L "https://github.com/mholt/caddy/releases/download/v0.10.10/caddy_v0.10.10_linux_amd64.tar.gz" \
+RUN curl -L "https://github.com/mholt/caddy/releases/download/v$CADDY_VERSION/caddy_v$CADDY_VERSION_linux_amd64.tar.gz" \
     | tar --no-same-owner -C /usr/bin/ -xz caddy
 
 # Remove build devs
