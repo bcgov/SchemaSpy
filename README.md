@@ -47,7 +47,7 @@ The Dockerfile was designed to generate an image that can be used in OpenShift.
 As a quick-start (example), the following command will create a BuildConfig, DeploymentConfig, and ancillary resources (service, etc.) in your current OpenShift project.
 
 ```
-oc new-app https://github.com/bcgov/SchemaSpy -e DATABASE_TYPE=pgsql -e DATABASE_NAME=default -e DATABASE_HOST=postgresql -e DATABASE_USER=django -e DB_PASSWORD=xyz1234 
+oc new-app https://github.com/bcgov/SchemaSpy -e DATABASE_TYPE=pgsql -e DATABASE_NAME=default -e DATABASE_HOST=postgresql -e DATABASE_USER=django -e DATABASE_PASSWORD=xyz1234 
 ```
 
 For more a more structured build and deployment environment, OpenShift templates can be found in the [OpenShift templates](./openshift/templates) folder.
