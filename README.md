@@ -103,8 +103,8 @@ docker run -ti --rm --name schemaspy \
 Due to licensing limitations, the JDBC drivers for Oracle are not included in the repository.
 
 Links to the drivers can be found here;
-* http://www.oracle.com/technetwork/database/features/jdbc/index-091264.html
-* A link to the latest (ojdbc8.jar) drivers can be found here; http://www.oracle.com/technetwork/database/features/jdbc/jdbc-ucp-122-3110062.html
+* https://www.oracle.com/technetwork/database/features/jdbc/index-091264.html
+* A link to the latest (ojdbc8.jar) drivers can be found here; https://www.oracle.com/technetwork/database/features/jdbc/jdbc-ucp-122-3110062.html
 
 Using the Oracle Thin drivers it is easy to connect to an Oracle database.
 

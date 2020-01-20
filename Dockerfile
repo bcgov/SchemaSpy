@@ -53,7 +53,7 @@ EXPOSE 8080
 # Refs: 
 # - https://github.com/cywolf/schemaspy-docker
 # - https://github.com/schemaspy/schemaspy
-# - http://schemaspy.readthedocs.io/en/latest/index.html
+# - https://schemaspy.readthedocs.io/en/latest/index.html
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ENV LC_ALL C
 
@@ -85,9 +85,9 @@ RUN apk update && \
     mkdir lib && \
     wget -nv -O lib/schemaspy-$SCHEMA_SPY_VERSION.jar https://github.com/schemaspy/schemaspy/releases/download/v$SCHEMA_SPY_VERSION/schemaspy-$SCHEMA_SPY_VERSION.jar && \
     cp lib/schemaspy-$SCHEMA_SPY_VERSION.jar lib/schemaspy.jar && \
-    wget -nv -O lib/pgsql-jdbc.jar http://central.maven.org/maven2/org/postgresql/postgresql/$POSTGRESQL_VERSION/postgresql-$POSTGRESQL_VERSION.jar && \
-    wget -nv -O lib/mysql-jdbc.jar http://central.maven.org/maven2/mysql/mysql-connector-java/$MYSQL_VERSION/mysql-connector-java-$MYSQL_VERSION.jar && \
-    wget -nv -O lib/sqlite-jdbc.jar http://central.maven.org/maven2/org/xerial/sqlite-jdbc/$SQL_LITE_VERSION/sqlite-jdbc-$SQL_LITE_VERSION.jar && \
+    wget -nv -O lib/pgsql-jdbc.jar https://central.maven.org/maven2/org/postgresql/postgresql/$POSTGRESQL_VERSION/postgresql-$POSTGRESQL_VERSION.jar && \
+    wget -nv -O lib/mysql-jdbc.jar https://central.maven.org/maven2/mysql/mysql-connector-java/$MYSQL_VERSION/mysql-connector-java-$MYSQL_VERSION.jar && \
+    wget -nv -O lib/sqlite-jdbc.jar https://central.maven.org/maven2/org/xerial/sqlite-jdbc/$SQL_LITE_VERSION/sqlite-jdbc-$SQL_LITE_VERSION.jar && \
     apk del \
         wget \
         ca-certificates
