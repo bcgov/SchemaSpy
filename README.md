@@ -7,7 +7,7 @@ Based on `openjdk:jre-alpine` the resulting image generates the database documen
 
 The open source SchemaSpy project is located here: https://github.com/schemaspy/schemaspy
 
-The open source Caddy project is located here; https://github.com/mholt/caddy
+The open source Caddy project is located here: https://github.com/caddyserver/caddy
 
 ## Configuration
 
