@@ -124,5 +124,5 @@ if [ ! -f "$OUTPUT_PATH/index.html" ]; then
 fi
 
 echo "Starting webserver on port $SERVER_PORT ..."
-exec caddy -quic --conf /etc/Caddyfile
+exec caddy run -config /etc/caddy/Caddyfile
 # =============================================================
