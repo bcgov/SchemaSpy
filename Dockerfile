@@ -20,14 +20,14 @@ RUN apk update && \
         curl
 
 # Install Caddy Server, and All Middleware
-RUN curl -L "https://github.com/mholt/caddy/releases/download/v0.11.1/caddy_v0.11.1_linux_amd64.tar.gz" \
+RUN curl -L "https://github.com/caddyserver/caddy/releases/download/v2.2.1/caddy_2.2.1_linux_amd64.tar.gz" \
     | tar --no-same-owner -C /usr/bin/ -xz caddy
 
 # Remove build devs
 RUN apk del devs
 
 # Add the default Caddyfile
-COPY Caddyfile /etc/Caddyfile
+COPY Caddyfile /etc/caddy/Caddyfile
 
 ENTRYPOINT ["/sbin/tini"]
 # ===================================================================================================================================================================
@@ -41,7 +41,7 @@ ENTRYPOINT ["/sbin/tini"]
 # Also twiddle the permissions on the Caddyfile so we will be able to overwrite it with a user-provided one if desired.
 RUN mkdir -p /var/www/html && \
     chmod g+w /var/www/html && \
-    chmod g+w /etc/Caddyfile
+    chmod g+w /etc/caddy/Caddyfile
 
 # Expose the port for the container to Caddy
 # If you chnage this you need to update the Caddy configuration.
@@ -62,10 +62,10 @@ ENV LC_ALL C
 ENV OUTPUT_PATH=/var/www/html
 
 # Define the default versions for the image
-ENV SCHEMA_SPY_VERSION=6.0.0
-ENV POSTGRESQL_VERSION=42.2.1
-ENV MYSQL_VERSION=6.0.6
-ENV SQL_LITE_VERSION=3.18.0
+ENV SCHEMA_SPY_VERSION=6.1.0
+ENV POSTGRESQL_VERSION=42.2.9
+ENV MYSQL_VERSION=8.0.22
+ENV SQL_LITE_VERSION=3.34.0
 
 RUN mkdir -p /app
 WORKDIR /app/
