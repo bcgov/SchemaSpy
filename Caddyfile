@@ -1,11 +1,11 @@
-http://localhost:8080 {
+{$SERVER_HOST}:{$SERVER_PORT} {
     # Log everything to stdout
     log {
         output stdout
     }
 
     #  Set server root
-    root * /var/www/html
+    root * {$OUTPUT_PATH}
 
     # Enable serving static files
     file_server
