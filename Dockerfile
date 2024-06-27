@@ -1,4 +1,4 @@
-FROM openjdk:jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 RUN apk update && \
     apk upgrade
@@ -34,7 +34,7 @@ ENTRYPOINT ["/sbin/tini"]
 
 # ===================================================================================================================================================================
 # Update with OpenShifty Stuff
-# Refs: 
+# Refs:
 # - https://github.com/BCDevOps/s2i-caddy
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Create the location where we will store our content, and fiddle the permissions so we will be able to write to it.
@@ -50,7 +50,7 @@ EXPOSE 8080
 
 # ===================================================================================================================================================================
 # Install SchemaSpy
-# Refs: 
+# Refs:
 # - https://github.com/cywolf/schemaspy-docker
 # - https://github.com/schemaspy/schemaspy
 # - https://schemaspy.readthedocs.io/en/latest/index.html
@@ -62,10 +62,10 @@ ENV LC_ALL C
 ENV OUTPUT_PATH=/var/www/html
 
 # Define the default versions for the image
-ENV SCHEMA_SPY_VERSION=6.1.0
-ENV POSTGRESQL_VERSION=42.2.9
-ENV MYSQL_VERSION=8.0.22
-ENV SQL_LITE_VERSION=3.34.0
+ENV SCHEMA_SPY_VERSION=6.2.4
+ENV POSTGRESQL_VERSION=42.7.3
+ENV MYSQL_VERSION=8.0.30
+ENV SQL_LITE_VERSION=3.46.0.0
 
 RUN mkdir -p /app
 WORKDIR /app/
@@ -81,7 +81,7 @@ RUN apk update && \
         ca-certificates \
         librsvg \
         graphviz \
-        ttf-ubuntu-font-family && \
+        ttf-freefont && \
     mkdir lib && \
     wget -nv -O lib/schemaspy-$SCHEMA_SPY_VERSION.jar https://github.com/schemaspy/schemaspy/releases/download/v$SCHEMA_SPY_VERSION/schemaspy-$SCHEMA_SPY_VERSION.jar && \
     cp lib/schemaspy-$SCHEMA_SPY_VERSION.jar lib/schemaspy.jar && \
