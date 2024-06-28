@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# The POSTGRESQL_ referances are here for compatibility with 
+# The POSTGRESQL_ referances are here for compatibility with
 # another implementation that only supported PostgreSQL
 #
 DB_TYPE=${DATABASE_TYPE-pgsql}
@@ -125,5 +125,5 @@ if [ ! -f "$OUTPUT_PATH/index.html" ]; then
 fi
 
 echo "Starting webserver on port $SERVER_PORT ..."
-exec caddy run -config /etc/caddy/Caddyfile
+exec caddy run --config /etc/caddy/Caddyfile
 # =============================================================
