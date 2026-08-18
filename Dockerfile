@@ -69,6 +69,7 @@ ENV SCHEMA_SPY_VERSION=7.0.2
 ENV POSTGRESQL_VERSION=42.7.13
 ENV MYSQL_VERSION=26.7.0
 ENV SQL_LITE_VERSION=3.53.2.1
+ENV MSSQL_VERSION=12.8.1.jre11
 
 RUN mkdir -p /app
 WORKDIR /app/
@@ -91,6 +92,7 @@ RUN apk update && \
     wget -nv -O lib/pgsql-jdbc.jar https://repo1.maven.org/maven2/org/postgresql/postgresql/$POSTGRESQL_VERSION/postgresql-$POSTGRESQL_VERSION.jar && \
     wget -nv -O lib/mysql-jdbc.jar https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/$MYSQL_VERSION/mysql-connector-j-$MYSQL_VERSION.jar && \
     wget -nv -O lib/sqlite-jdbc.jar https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/$SQL_LITE_VERSION/sqlite-jdbc-$SQL_LITE_VERSION.jar && \
+    wget -nv -O lib/mssql-jdbc.jar https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/$MSSQL_VERSION/mssql-jdbc-$MSSQL_VERSION.jar && \
     apk del \
         wget \
         ca-certificates

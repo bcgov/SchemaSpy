@@ -6,8 +6,8 @@ services:
       dockerfile: Dockerfile
     image: "${COMPOSE_PROJECT_NAME:-schemaspy}-schemaspy"
     environment:
-      # Point DATABASE_TYPE/DATABASE_HOST at either the `postgres` or `mysql`
-      # service below - see ../.env for the switch.
+      # Point DATABASE_TYPE/DATABASE_HOST at the `postgres`, `mysql`, or
+      # `mssql` service below - see ../.env for the switch.
       - DATABASE_TYPE=${DATABASE_TYPE:-pgsql}
       - DATABASE_HOST=${DATABASE_HOST:-postgres}
       - DATABASE_NAME=${DATABASE_NAME:-example}
@@ -15,6 +15,7 @@ services:
       - DATABASE_CATALOG=${DATABASE_CATALOG:-}
       - DATABASE_USER=${DATABASE_USER:-example}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD:-example}
+      - DATABASE_DRIVER=${DATABASE_DRIVER:-}
       - SCHEMASPY_HOST=${SCHEMASPY_HOST:-0.0.0.0}
       - SCHEMASPY_PORT=${SCHEMASPY_PORT:-8080}
       - SCHEMASPY_ARGUMENTS=${SCHEMASPY_ARGUMENTS:-}
@@ -31,6 +32,8 @@ services:
         condition: service_healthy
       mysql:
         condition: service_healthy
+      mssql-init:
+        condition: service_completed_successfully
     networks:
       - schemaspy-network
 
@@ -83,6 +86,45 @@ services:
       - schemaspy-network
     restart: unless-stopped
 
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD:-Example_123}
+    ports:
+      - "${MSSQL_EXPOSED_PORT:-1433}:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - schemaspy-network
+    restart: unless-stopped
+
+  # One-shot job: loads the example schema once mssql is healthy, then exits.
+  mssql-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD:-Example_123}
+    volumes:
+      - ./db-init/mssql:/db-init:ro
+    depends_on:
+      mssql:
+        condition: service_healthy
+    entrypoint: /bin/bash
+    command: >
+      -c "/opt/mssql-tools18/bin/sqlcmd -C -S mssql -U sa -P \"$$MSSQL_SA_PASSWORD\" -i /db-init/01-schema.sql"
+    networks:
+      - schemaspy-network
+
 networks:
   schemaspy-network:
     driver: bridge
@@ -90,3 +132,4 @@ networks:
 volumes:
   postgres-data:
   mysql-data:
+  mssql-data:
