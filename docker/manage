@@ -57,6 +57,29 @@ deleteVolumes() {
   docker compose down -v
 }
 
+convertMssqlSchemas() {
+  local source_directory="${MSSQL_INIT_SCRIPTS_DIR:-./db-init/mssql}"
+  local output_directory="${MSSQL_CONVERTED_INIT_SCRIPTS_DIR:-./generated-mssql-init}"
+
+  echo "Converting SQL Server schema scripts from: ${source_directory}"
+  "${SCRIPT_HOME}/convert-mssql-schema.sh" "${source_directory}" "${output_directory}"
+  export MSSQL_CONVERTED_INIT_SCRIPTS_DIR="${output_directory}"
+}
+
+deleteConvertedMssqlSchemas() {
+  local output_directory="${MSSQL_CONVERTED_INIT_SCRIPTS_DIR:-./generated-mssql-init}"
+
+  case "${output_directory}" in
+    ""|.|./|/)
+      echo "ERROR: Refusing to remove unsafe MSSQL_CONVERTED_INIT_SCRIPTS_DIR: ${output_directory}"
+      exit 1
+      ;;
+  esac
+
+  echo "Removing generated SQL Server schema scripts: ${output_directory}"
+  rm -rf "${output_directory}"
+}
+
 getOutputDirectory() {
   echo "${SCHEMASPY_OUTPUT_DIR:-./output}"
 }
@@ -96,6 +119,7 @@ case "$COMMAND" in
   up|start)
     configureEnvironment
     createOutputDirectory
+    convertMssqlSchemas
     docker compose up -d "$@"
     ;;
   stop)
@@ -105,6 +129,7 @@ case "$COMMAND" in
     configureEnvironment
     deleteVolumes
     deleteOutputDirectory
+    deleteConvertedMssqlSchemas
     ;;
   *)
     usage

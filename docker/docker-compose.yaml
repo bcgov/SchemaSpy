@@ -117,13 +117,13 @@ services:
     environment:
       - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD:-Example_123}
     volumes:
-      - ${MSSQL_INIT_SCRIPTS_DIR:-./db-init/mssql}:/db-init:ro
+      - ${MSSQL_CONVERTED_INIT_SCRIPTS_DIR:-./generated-mssql-init}:/db-init:ro
     depends_on:
       mssql:
         condition: service_healthy
     entrypoint: /bin/bash
     command: >
-      -c 'for script in /db-init/*.sql; do [ -f "$$script" ] || continue; /opt/mssql-tools18/bin/sqlcmd -C -S mssql -U sa -P "$$MSSQL_SA_PASSWORD" -i "$$script" || exit $$?; done'
+      -c 'for script in /db-init/*.sql; do [ -f "$$script" ] || continue; /opt/mssql-tools18/bin/sqlcmd -b -C -S mssql -U sa -P "$$MSSQL_SA_PASSWORD" -i "$$script" || exit $$?; done'
     networks:
       - schemaspy-network
 
