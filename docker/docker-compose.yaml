@@ -27,6 +27,8 @@ services:
       # Explicit http:// scheme so Caddy serves plain HTTP; the stock Caddyfile
       # lets newer Caddy versions assume TLS for a bare host:port address.
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Persist generated SchemaSpy documents outside the container.
+      - ${SCHEMASPY_OUTPUT_DIR:-./output}:/var/www/html
     depends_on:
       postgres:
         condition: service_healthy

@@ -30,8 +30,8 @@ usage() {
   stop - Stops the services. Non-destructive; containers and volumes are kept
          so the next 'start' reuses them.
 
-  down | rm - Brings down the services and removes the volumes (database data)
-              and containers. Destructive.
+  down | rm - Brings down the services and removes the volumes (database data),
+              containers, and generated SchemaSpy documents. Destructive.
 EOF
 exit 1
 }
@@ -56,6 +56,32 @@ deleteVolumes() {
   echo "Stopping and removing any running containers ..."
   docker compose down -v
 }
+
+getOutputDirectory() {
+  echo "${SCHEMASPY_OUTPUT_DIR:-./output}"
+}
+
+createOutputDirectory() {
+  local output_directory
+  output_directory="$(getOutputDirectory)"
+  echo "Creating SchemaSpy output directory: ${output_directory}"
+  mkdir -p "${output_directory}"
+}
+
+deleteOutputDirectory() {
+  local output_directory
+  output_directory="$(getOutputDirectory)"
+
+  case "${output_directory}" in
+    ""|.|./|/)
+      echo "ERROR: Refusing to remove unsafe SCHEMASPY_OUTPUT_DIR: ${output_directory}"
+      exit 1
+      ;;
+  esac
+
+  echo "Removing SchemaSpy output directory: ${output_directory}"
+  rm -rf "${output_directory}"
+}
 # =================================================================================================================
 
 pushd "${SCRIPT_HOME}" >/dev/null
@@ -67,8 +93,9 @@ case "$COMMAND" in
     configureEnvironment
     docker compose build "$@"
     ;;
-  start)
+  up|start)
     configureEnvironment
+    createOutputDirectory
     docker compose up -d "$@"
     ;;
   stop)
@@ -77,6 +104,7 @@ case "$COMMAND" in
   rm|down)
     configureEnvironment
     deleteVolumes
+    deleteOutputDirectory
     ;;
   *)
     usage
