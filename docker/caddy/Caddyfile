@@ -1,0 +1,20 @@
+http://:{$SERVER_PORT} {
+    # Bind to SERVER_HOST while matching any Host header - an address of
+    # "{$SERVER_HOST}:{$SERVER_PORT}" only matches requests whose Host header
+    # is literally that IP, which breaks normal browser/curl access.
+    bind {$SERVER_HOST}
+
+    # Log everything to stdout
+    log {
+        output stdout
+    }
+
+    #  Set server root
+    root * {$OUTPUT_PATH}
+
+    # Enable serving static files
+    file_server
+
+    # Enable gzip, zstd compression
+    encode zstd gzip
+}

@@ -1,0 +1,92 @@
+name: schemaspy
+services:
+  schemaspy:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: "${COMPOSE_PROJECT_NAME:-schemaspy}-schemaspy"
+    environment:
+      # Point DATABASE_TYPE/DATABASE_HOST at either the `postgres` or `mysql`
+      # service below - see ../.env for the switch.
+      - DATABASE_TYPE=${DATABASE_TYPE:-pgsql}
+      - DATABASE_HOST=${DATABASE_HOST:-postgres}
+      - DATABASE_NAME=${DATABASE_NAME:-example}
+      - DATABASE_SCHEMA=${DATABASE_SCHEMA:-public}
+      - DATABASE_CATALOG=${DATABASE_CATALOG:-}
+      - DATABASE_USER=${DATABASE_USER:-example}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-example}
+      - SCHEMASPY_HOST=${SCHEMASPY_HOST:-0.0.0.0}
+      - SCHEMASPY_PORT=${SCHEMASPY_PORT:-8080}
+      - SCHEMASPY_ARGUMENTS=${SCHEMASPY_ARGUMENTS:-}
+      # Caddy's auto-HTTPS module needs a writable $HOME to cache its local CA.
+      - HOME=/app
+    ports:
+      - "${SCHEMASPY_EXPOSED_PORT:-8082}:8080"
+    volumes:
+      # Explicit http:// scheme so Caddy serves plain HTTP; the stock Caddyfile
+      # lets newer Caddy versions assume TLS for a bare host:port address.
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    networks:
+      - schemaspy-network
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=${POSTGRES_DATABASE:-example}
+      - POSTGRES_USER=${POSTGRES_USER:-example}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-example}
+    ports:
+      - "${POSTGRES_EXPOSED_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./db-init/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-example} -d ${POSTGRES_DATABASE:-example}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - schemaspy-network
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-example}
+      - MYSQL_USER=${MYSQL_USER:-example}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-example}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-example}
+    ports:
+      - "${MYSQL_EXPOSED_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db-init/mysql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -u${MYSQL_USER:-example} -p${MYSQL_PASSWORD:-example}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - schemaspy-network
+    restart: unless-stopped
+
+networks:
+  schemaspy-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  mysql-data:

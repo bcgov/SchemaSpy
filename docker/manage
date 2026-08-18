@@ -1,0 +1,86 @@
+#!/bin/bash
+export MSYS_NO_PATHCONV=1
+set -e
+
+SCRIPT_HOME="$(cd "$(dirname "$0")" && pwd)"
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-schemaspy}"
+
+# =================================================================================================================
+# Usage:
+# -----------------------------------------------------------------------------------------------------------------
+usage() {
+  cat <<-EOF
+
+  Usage: $0 {build|start|stop|down}
+
+  Options:
+
+  build - Build the SchemaSpy docker image.
+          Example:
+            $0 build
+          Rebuild without cache:
+            $0 build --no-cache
+
+  start - Start the stack (schemaspy, postgres, mysql) in the background.
+          SchemaSpy is configured (via .env) to connect to one of the two
+          databases; both databases are always started.
+          Example:
+            $0 start
+
+  stop - Stops the services. Non-destructive; containers and volumes are kept
+         so the next 'start' reuses them.
+
+  down | rm - Brings down the services and removes the volumes (database data)
+              and containers. Destructive.
+EOF
+exit 1
+}
+# -----------------------------------------------------------------------------------------------------------------
+# Functions:
+# -----------------------------------------------------------------------------------------------------------------
+configureEnvironment() {
+  if [ ! -f .env ] && [ -f .env.example ]; then
+    echo -e "\nNo .env found, copying default from .env.example ...\n"
+    cp .env.example .env
+  fi
+
+  if [ -f .env ]; then
+    echo -e "\nLoading environment variables from .env ...\n"
+    set -a
+    source .env
+    set +a
+  fi
+}
+
+deleteVolumes() {
+  echo "Stopping and removing any running containers ..."
+  docker compose down -v
+}
+# =================================================================================================================
+
+pushd "${SCRIPT_HOME}" >/dev/null
+COMMAND=$(echo "${1}" | tr '[:upper:]' '[:lower:]')
+shift || true
+
+case "$COMMAND" in
+  build)
+    configureEnvironment
+    docker compose build "$@"
+    ;;
+  start)
+    configureEnvironment
+    docker compose up -d "$@"
+    ;;
+  stop)
+    docker compose stop
+    ;;
+  rm|down)
+    configureEnvironment
+    deleteVolumes
+    ;;
+  *)
+    usage
+    ;;
+esac
+
+popd >/dev/null
