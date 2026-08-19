@@ -11,7 +11,7 @@ export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-schemaspy}"
 usage() {
   cat <<-EOF
 
-  Usage: $0 {build|start|stop|down}
+  Usage: $0 {build|start|open|stop|down}
 
   Options:
 
@@ -21,11 +21,14 @@ usage() {
           Rebuild without cache:
             $0 build --no-cache
 
-  start - Start the stack (schemaspy, postgres, mysql) in the background.
-          SchemaSpy is configured (via .env) to connect to one of the two
-          databases; both databases are always started.
-          Example:
-            $0 start
+  up | start - Start the stack (schemaspy, postgres, mysql) in the background.
+               SchemaSpy is configured (via .env) to connect to one of the two
+               databases; both databases are always started. Opens the generated
+               documentation in the default browser.
+               Example:
+                 $0 start
+
+  open - Open the generated documentation in the default browser.
 
   stop - Stops the services. Non-destructive; containers and volumes are kept
          so the next 'start' reuses them.
@@ -97,6 +100,45 @@ createOutputDirectory() {
   mkdir -p "${output_directory}"
 }
 
+waitForDocumentGeneration() {
+  local url="$1"
+  local timeout_seconds="${SCHEMASPY_GENERATION_TIMEOUT_SECONDS:-300}"
+  local elapsed_seconds=0
+
+  printf "\nWaiting for document generation to complete "
+  until curl --fail --silent --head "${url}" >/dev/null; do
+    if (( elapsed_seconds >= timeout_seconds )); then
+      echo
+      echo "ERROR: Timed out waiting for documentation at ${url}."
+      return 1
+    fi
+
+    printf "."
+    sleep 2
+    ((elapsed_seconds += 2))
+  done
+  echo
+}
+
+openInBrowser() {
+  local url="$1"
+
+  echo "Opening ${url} in your default browser ..."
+  case "${OSTYPE:-}" in
+    msys*|cygwin*) cmd.exe /c start "" "${url}" ;;
+    darwin*) open "${url}" ;;
+    linux*) xdg-open "${url}" ;;
+    *)
+      echo "Unable to detect a browser start command. Open this URL manually:"
+      echo "  ${url}"
+      ;;
+  esac
+}
+
+getSchemaSpyUrl() {
+  echo "http://localhost:${SCHEMASPY_EXPOSED_PORT:-8082}"
+}
+
 deleteOutputDirectory() {
   local output_directory
   output_directory="$(getOutputDirectory)"
@@ -127,6 +169,15 @@ case "$COMMAND" in
     createOutputDirectory
     convertMssqlSchemas
     docker compose up -d "$@"
+    url="$(getSchemaSpyUrl)"
+    waitForDocumentGeneration "${url}"
+    openInBrowser "${url}"
+    ;;
+  open)
+    configureEnvironment
+    url="$(getSchemaSpyUrl)"
+    waitForDocumentGeneration "${url}"
+    openInBrowser "${url}"
     ;;
   stop)
     docker compose stop

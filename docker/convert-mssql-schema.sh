@@ -47,7 +47,7 @@ for source_script in "${source_scripts[@]}"; do
     fffe*) tail -c +3 "$source_script" | tr -d '\000' ;;
     efbbbf*) tail -c +4 "$source_script" ;;
     *) cat "$source_script" ;;
-  esac | awk '
+  esac | LC_ALL=C awk '
     function emit_batch() {
       if (batch == "") {
         return

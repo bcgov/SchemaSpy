@@ -28,7 +28,8 @@ cp .env.example .env    # if you haven't already - manage does this automaticall
 ./manage start
 ```
 
-Then open http://localhost:8082 (or whatever `SCHEMASPY_EXPOSED_PORT` is set to) in a browser to view the generated documentation.
+`./manage start` opens the generated documentation in your default browser at
+http://localhost:8082 (or whatever `SCHEMASPY_EXPOSED_PORT` is set to).
 
 When you're done:
 
@@ -43,7 +44,8 @@ When you're done:
 | Command | Description |
 | ------- | ----------- |
 | `./manage build [--no-cache]` | Builds the SchemaSpy image. |
-| `./manage start` (alias `up`) | Loads `.env`, creates the output directory, converts any MSSQL scripts, and starts all services in the background. |
+| `./manage start` (alias `up`) | Loads `.env`, creates the output directory, converts any MSSQL scripts, starts all services in the background, and opens the documentation in the default browser. |
+| `./manage open` | Opens the documentation in the default browser. |
 | `./manage stop` | Stops containers without deleting anything. Fastest way to pause and resume later. |
 | `./manage down` (alias `rm`) | Stops containers and deletes volumes (database data), the SchemaSpy output directory, and any converted MSSQL scripts. Destructive - use `stop` if you want to keep your data. |
 
@@ -140,7 +142,8 @@ stack provides its own import path via the `mssql-init` one-shot service:
      `MSSQL_CONVERTED_INIT_SCRIPTS_DIR` (default `./generated-mssql-init`).
 3. The `mssql-init` service then runs every `.sql` file in that converted
    folder, in filename order, against the `mssql` service once it reports
-   healthy.
+   healthy. The scripts run once per SQL Server data volume; use
+   `./manage down` to remove the volume and import them again.
 
 > The converted output folder is regenerated and deleted on every
 > `start`/`down` - never edit it directly, edit the scripts in
