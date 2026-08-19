@@ -59,7 +59,7 @@ The Dockerfile was designed to generate an image that can be used in OpenShift.
 As a quick-start (example), the following command will create a BuildConfig, DeploymentConfig, and ancillary resources (service, etc.) in your current OpenShift project.
 
 ```
-oc new-app https://github.com/bcgov/SchemaSpy -e DATABASE_TYPE=pgsql -e DATABASE_NAME=default -e DATABASE_HOST=postgresql -e DATABASE_USER=django -e DB_PASSWORD=xyz1234 
+oc new-app https://github.com/bcgov/SchemaSpy -e DATABASE_TYPE=pgsql -e DATABASE_NAME=default -e DATABASE_HOST=postgresql -e DATABASE_USER=django -e DB_PASSWORD=xyz1234
 ```
 
 For more a more structured build and deployment environment, OpenShift templates can be found in the [OpenShift templates](./openshift/templates) folder.
@@ -112,26 +112,19 @@ docker run -ti --rm --name schemaspy \
 
 ### Oracle
 
-Due to licensing limitations, the JDBC drivers for Oracle are not included in the repository.
-
-Links to the drivers can be found here;
-* https://www.oracle.com/technetwork/database/features/jdbc/index-091264.html
-* A link to the latest (ojdbc8.jar) drivers can be found here; https://www.oracle.com/technetwork/database/features/jdbc/jdbc-ucp-122-3110062.html
+The Oracle JDBC drivers are downloaded from Maven Central and built into the image automatically, so no separate image or manual driver download is required.
 
 Using the Oracle Thin drivers it is easy to connect to an Oracle database.
 
-The following configuraiton assumes you have downloaded the jar and copied it into the `./lib` folder of your working copy and run the following commands to generate the base image followed by the image containing the Oracle JDBC drivers.
-
 ```
 docker build -t 'schema-spy' .
-docker build -f Dockerfile.oracle -t 'schema-spy-with-oracle-jdbc' .
 ```
 
 You can then use the [oc-push-image.sh](https://github.com/BCDevOps/openshift-developer-tools/blob/master/bin/oc-push-image.sh) from [OpenShift Scripts](https://github.com/BCDevOps/openshift-developer-tools/blob/master/bin/README.md) to push the image to your OpenShift project.
 
 For example:
 ```
-oc-push-image.sh -i schema-spy-with-oracle-jdbc -n devex-von-bc-registries-agent-tools
+oc-push-image.sh -i schema-spy -n devex-von-bc-registries-agent-tools
 ```
 
 Configuration:
@@ -188,7 +181,7 @@ Example Configuration:
 
 ## Code of Conduct
 
-Please refer to the [Code of Conduct](./CODE_OF_CONDUCT.md) 
+Please refer to the [Code of Conduct](./CODE_OF_CONDUCT.md)
 
 ## Contributing
 
