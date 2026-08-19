@@ -59,9 +59,16 @@ for source_script in "${source_scripts[@]}"; do
           print substr(batch, RSTART, RLENGTH)
           print "GO"
         }
-      } else if (normalized ~ /(CREATE[[:space:]]+(USER|LOGIN|ROLE)|ALTER[[:space:]]+ROLE|ALTER[[:space:]]+AUTHORIZATION|ALTER[[:space:]]+DATABASE|ALTER[[:space:]]+TABLE.*(ENABLE|DISABLE)[[:space:]]+TRIGGER|SP_FULLTEXT_DATABASE|CREATE[[:space:]]+FULLTEXT|SP_DB_VARDECIMAL_STORAGE_FORMAT|INSERT[[:space:]]+INTO|UPDATE[[:space:]]+|DELETE[[:space:]]+FROM|MERGE[[:space:]]+INTO|TRUNCATE[[:space:]]+TABLE)/) {
+      } else if (normalized ~ /(CREATE[[:space:]]+(USER|LOGIN|ROLE)|ALTER[[:space:]]+ROLE|ALTER[[:space:]]+AUTHORIZATION|ALTER[[:space:]]+DATABASE|ALTER[[:space:]]+TABLE.*(ENABLE|DISABLE)[[:space:]]+TRIGGER|SP_FULLTEXT_DATABASE|CREATE[[:space:]]+FULLTEXT|SP_DB_VARDECIMAL_STORAGE_FORMAT|INSERT[[:space:]]+INTO|DELETE[[:space:]]+FROM|MERGE[[:space:]]+INTO|TRUNCATE[[:space:]]+TABLE)/ || normalized ~ /^[[:space:]]*UPDATE[[:space:]]/) {
+        # Note: UPDATE is anchored to the start of the batch so FK clauses
+        # like "ON UPDATE CASCADE" are not mistaken for a data-only UPDATE statement.
         # Omit security, storage/settings, full-text, and data-only batches.
       } else {
+        # Modules using CHANGETABLE(CHANGES ...) fail to compile unless change
+        # tracking is already enabled, which source dumps often omit.
+        if (normalized ~ /CHANGETABLE/) {
+          ensure_change_tracking(batch)
+        }
         printf "%s", batch
         if (batch !~ /\n$/) {
           print ""
@@ -70,6 +77,25 @@ for source_script in "${source_scripts[@]}"; do
       }
 
       batch = ""
+    }
+
+    function ensure_change_tracking(text,    search, frag) {
+      if (!ct_db_enabled) {
+        print "ALTER DATABASE CURRENT SET CHANGE_TRACKING = ON (CHANGE_RETENTION = 2 DAYS, AUTO_CLEANUP = ON)"
+        print "GO"
+        ct_db_enabled = 1
+      }
+      search = text
+      while (match(search, /CHANGETABLE[[:space:]]*\([[:space:]]*CHANGES[[:space:]]+[][A-Za-z0-9_.]+/)) {
+        frag = substr(search, RSTART, RLENGTH)
+        sub(/^CHANGETABLE[[:space:]]*\([[:space:]]*CHANGES[[:space:]]+/, "", frag)
+        if (!(frag in ct_tables_enabled)) {
+          printf "ALTER TABLE %s ENABLE CHANGE_TRACKING\n", frag
+          print "GO"
+          ct_tables_enabled[frag] = 1
+        }
+        search = substr(search, RSTART + RLENGTH)
+      }
     }
 
     /^[[:space:]]*[Gg][Oo]([[:space:]]+[0-9]+)?[[:space:]]*(--.*)?$/ {
@@ -84,3 +110,4 @@ for source_script in "${source_scripts[@]}"; do
 
   echo "Converted $(basename "$source_script")"
 done
+
