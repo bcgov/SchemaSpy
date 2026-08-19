@@ -9,6 +9,18 @@ The open source SchemaSpy project is located here: https://github.com/schemaspy/
 
 The open source Caddy project is located here; https://github.com/mholt/caddy
 
+## Local Docker environment
+
+Want to try SchemaSpy out quickly without setting up your own database? The
+[docker](./docker) folder contains a ready-to-run Docker Compose stack with
+example Postgres, MySQL, and SQL Server databases, sample schemas, and
+support for pointing at your own database initialization scripts.
+
+See the [Local Docker Environment documentation](./docker/README.md) for
+setup steps, example usage, how to import your own schema, and how the
+generated documentation can be exported and shared without needing the
+container or source database.
+
 ## Configuration
 
 Configuration is performed using environment varables.

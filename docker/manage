@@ -53,6 +53,12 @@ configureEnvironment() {
 }
 
 deleteVolumes() {
+  deleteContainerVolumes
+  deleteOutputDirectory
+  deleteConvertedMssqlSchemas
+}
+
+deleteContainerVolumes() {
   echo "Stopping and removing any running containers ..."
   docker compose down -v
 }
@@ -128,8 +134,6 @@ case "$COMMAND" in
   rm|down)
     configureEnvironment
     deleteVolumes
-    deleteOutputDirectory
-    deleteConvertedMssqlSchemas
     ;;
   *)
     usage
