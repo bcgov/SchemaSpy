@@ -1,13 +1,17 @@
 # SchemaSpy
 
-Quickly run SchemaSpy on a Postgres, MySQL, or SQLite3 database in order
+Quickly run SchemaSpy on a Postgres, MySQL, SQLite3, Microsoft SQL Server, or Oracle database in order
 to generate a browsable visualization of the tables, columns, and relationships.
 
-Based on `openjdk:jre-alpine` the resulting image generates the database documentation using SchemaSpy and serves the resulting html using Caddy, and is compatible with OpenShift.
+Based on `eclipse-temurin:21-jre-alpine-3.22` the resulting image generates the database documentation using SchemaSpy and serves the resulting html using Caddy, and is compatible with OpenShift.
 
 The open source SchemaSpy project is located here: https://github.com/schemaspy/schemaspy
 
 The open source Caddy project is located here; https://github.com/mholt/caddy
+
+## Official Docker Images
+
+Official SchemaSpy container images are published to the GitHub Container Registry at [SchemaSpy Container Images](https://github.com/bcgov/SchemaSpy/pkgs/container/schemaspy%2Fschemaspy). You do not need to build the image yourself; you can use the pre-built images directly.
 
 ## Local Docker environment
 
@@ -27,7 +31,7 @@ Configuration is performed using environment varables.
 
 | Name | Description | Example |
 | ---- | ------- | ------- |
-| DATABASE_TYPE | The database type being documented.  Defaults to `pgsql`. | One of `mysql`, `pgsql`, or `sqlite`.  Other database types are supported by SchemaSpy, but their JDBC connector libraries are not currently included in the image. |
+| DATABASE_TYPE | The database type being documented.  Defaults to `pgsql`. | One of `mysql`, `pgsql`, `sqlite`, `mssql`, or `oracle`.  The JDBC connector libraries for all these databases are included in the image. |
 | DATABASE_NAME | The name of the database to document. | MyDatabase |
 | DATABASE_HOST | The hostname of the server |  postgresql |
 | DATABASE_SCHEMA | OPTIONAL - The schema in the database to document.  Defaults to `public`. | my_schema |
@@ -63,50 +67,6 @@ oc new-app https://github.com/bcgov/SchemaSpy -e DATABASE_TYPE=pgsql -e DATABASE
 ```
 
 For more a more structured build and deployment environment, OpenShift templates can be found in the [OpenShift templates](./openshift/templates) folder.
-
-## Running in Docker
-
-### Build Command
-
-```
-docker build -t schemaspy https://github.com/bcgov/SchemaSpy
-```
-
-### Sample MySQL Usage
-
-```
-docker run -ti --rm --name schemaspy \
-	-p 8080:8080 \
-	-e DATABASE_TYPE=mysql \
-	-e DATABASE_HOST=mysql -e DATABASE_NAME=mydatabase \
-	-e DATABASE_USER=root -e DATABASE_PASSWORD=mysecretpassword \
-	--link mysql \
-	schemaspy
-```
-
-### Sample Postgres Usage
-
-```
-docker run -ti --rm --name schemaspy \
-	-p 8080:8080 \
-	-e DATABASE_TYPE=pgsql \
-	-e DATABASE_HOST=postgres -e DATABASE_NAME=mydatabase \
-	-e DATABASE_USER=postgres -e DATABASE_PASSWORD=mysecretpassword \
-	--link postgres \
-	schemaspy
-```
-
-### Sample SQLite3 Usage
-
-```
-mkdir data && cp mydatabase.sqlite3 data/
-docker run -ti --rm --name schemaspy \
-	-p 8080:8080 \
-	-v "$PWD/data":/app/data \
-	-e DATABASE_TYPE=sqlite \
-	-e DATABASE_NAME=/app/data/mydatabase.sqlite3 \
-	schemaspy
-```
 
 ## Use on other databases
 
