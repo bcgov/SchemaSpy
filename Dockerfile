@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre-alpine-3.22
 
 RUN apk update && \
     apk upgrade
@@ -20,7 +20,7 @@ RUN apk update && \
         curl
 
 # Define the default Caddy version for the image
-ENV CADDY_VERSION=2.8.4
+ENV CADDY_VERSION=2.11.4
 
 # Install Caddy Server, and All Middleware
 RUN curl -L "https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_linux_amd64.tar.gz" \
@@ -58,17 +58,19 @@ EXPOSE 8080
 # - https://github.com/schemaspy/schemaspy
 # - https://schemaspy.readthedocs.io/en/latest/index.html
 # -------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ENV LC_ALL C
+ENV LC_ALL=C
 
 # Define the default output directory for SchemaSpy
 # If you change this you will need to update the Caddy configuration.
 ENV OUTPUT_PATH=/var/www/html
 
 # Define the default versions for the image
-ENV SCHEMA_SPY_VERSION=6.2.4
-ENV POSTGRESQL_VERSION=42.7.3
-ENV MYSQL_VERSION=8.0.30
-ENV SQL_LITE_VERSION=3.46.0.0
+ENV SCHEMA_SPY_VERSION=7.0.2
+ENV POSTGRESQL_VERSION=42.7.13
+ENV MYSQL_VERSION=26.7.0
+ENV SQL_LITE_VERSION=3.53.2.1
+ENV MSSQL_VERSION=12.8.1.jre11
+ENV ORACLE_JDBC_VERSION=23.26.3.0.0
 
 RUN mkdir -p /app
 WORKDIR /app/
@@ -86,11 +88,13 @@ RUN apk update && \
         graphviz \
         ttf-freefont && \
     mkdir lib && \
-    wget -nv -O lib/schemaspy-$SCHEMA_SPY_VERSION.jar https://github.com/schemaspy/schemaspy/releases/download/v$SCHEMA_SPY_VERSION/schemaspy-$SCHEMA_SPY_VERSION.jar && \
+    wget -nv -O lib/schemaspy-$SCHEMA_SPY_VERSION.jar https://github.com/schemaspy/schemaspy/releases/download/v$SCHEMA_SPY_VERSION/schemaspy-app.jar && \
     cp lib/schemaspy-$SCHEMA_SPY_VERSION.jar lib/schemaspy.jar && \
     wget -nv -O lib/pgsql-jdbc.jar https://repo1.maven.org/maven2/org/postgresql/postgresql/$POSTGRESQL_VERSION/postgresql-$POSTGRESQL_VERSION.jar && \
-    wget -nv -O lib/mysql-jdbc.jar https://repo1.maven.org/maven2/mysql/mysql-connector-java/$MYSQL_VERSION/mysql-connector-java-$MYSQL_VERSION.jar && \
+    wget -nv -O lib/mysql-jdbc.jar https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/$MYSQL_VERSION/mysql-connector-j-$MYSQL_VERSION.jar && \
     wget -nv -O lib/sqlite-jdbc.jar https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/$SQL_LITE_VERSION/sqlite-jdbc-$SQL_LITE_VERSION.jar && \
+    wget -nv -O lib/mssql-jdbc.jar https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/$MSSQL_VERSION/mssql-jdbc-$MSSQL_VERSION.jar && \
+    wget -nv -O lib/ora-jdbc.jar https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc17/$ORACLE_JDBC_VERSION/ojdbc17-$ORACLE_JDBC_VERSION.jar && \
     apk del \
         wget \
         ca-certificates

@@ -1,0 +1,138 @@
+name: schemaspy
+services:
+  schemaspy:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: "${COMPOSE_PROJECT_NAME:-schemaspy}-schemaspy"
+    environment:
+      # Point DATABASE_TYPE/DATABASE_HOST at the `postgres`, `mysql`, or
+      # `mssql` service below - see ../.env for the switch.
+      - DATABASE_TYPE=${DATABASE_TYPE:-pgsql}
+      - DATABASE_HOST=${DATABASE_HOST:-postgres}
+      - DATABASE_NAME=${DATABASE_NAME:-example}
+      - DATABASE_SCHEMA=${DATABASE_SCHEMA:-public}
+      - DATABASE_CATALOG=${DATABASE_CATALOG:-}
+      - DATABASE_USER=${DATABASE_USER:-example}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-example}
+      - DATABASE_DRIVER=${DATABASE_DRIVER:-}
+      - SCHEMASPY_HOST=${SCHEMASPY_HOST:-0.0.0.0}
+      - SCHEMASPY_PORT=${SCHEMASPY_PORT:-8080}
+      - SCHEMASPY_ARGUMENTS=${SCHEMASPY_ARGUMENTS:-}
+      # Caddy's auto-HTTPS module needs a writable $HOME to cache its local CA.
+      - HOME=/app
+    ports:
+      - "${SCHEMASPY_EXPOSED_PORT:-8082}:8080"
+    volumes:
+      # Explicit http:// scheme so Caddy serves plain HTTP; the stock Caddyfile
+      # lets newer Caddy versions assume TLS for a bare host:port address.
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Persist generated SchemaSpy documents outside the container.
+      - ${SCHEMASPY_OUTPUT_DIR:-./output}:/var/www/html
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      mssql-init:
+        condition: service_completed_successfully
+    networks:
+      - schemaspy-network
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=${POSTGRES_DATABASE:-example}
+      - POSTGRES_USER=${POSTGRES_USER:-example}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-example}
+    ports:
+      - "${POSTGRES_EXPOSED_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ${POSTGRES_INIT_SCRIPTS_DIR:-./db-init/postgres}:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-example} -d ${POSTGRES_DATABASE:-example}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - schemaspy-network
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-example}
+      - MYSQL_USER=${MYSQL_USER:-example}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-example}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-example}
+    ports:
+      - "${MYSQL_EXPOSED_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ${MYSQL_INIT_SCRIPTS_DIR:-./db-init/mysql}:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -u${MYSQL_USER:-example} -p${MYSQL_PASSWORD:-example}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - schemaspy-network
+    restart: unless-stopped
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD:-Example_123}
+    ports:
+      - "${MSSQL_EXPOSED_PORT:-1433}:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - schemaspy-network
+    restart: unless-stopped
+
+  # One-shot job: loads the example schema once mssql is healthy, then exits.
+  mssql-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD:-Example_123}
+      - DATABASE_NAME=${DATABASE_NAME:-}
+    volumes:
+      - ${MSSQL_CONVERTED_INIT_SCRIPTS_DIR:-./generated-mssql-init}:/db-init:ro
+      - ./run-mssql-init.sh:/run-mssql-init.sh:ro
+    depends_on:
+      mssql:
+        condition: service_healthy
+    entrypoint: /bin/bash
+    command: /run-mssql-init.sh
+    networks:
+      - schemaspy-network
+
+networks:
+  schemaspy-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  mysql-data:
+  mssql-data:

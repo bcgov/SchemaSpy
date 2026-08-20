@@ -1,0 +1,194 @@
+#!/bin/bash
+export MSYS_NO_PATHCONV=1
+set -e
+
+SCRIPT_HOME="$(cd "$(dirname "$0")" && pwd)"
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-schemaspy}"
+
+# =================================================================================================================
+# Usage:
+# -----------------------------------------------------------------------------------------------------------------
+usage() {
+  cat <<-EOF
+
+  Usage: $0 {build|start|open|stop|down}
+
+  Options:
+
+  build - Build the SchemaSpy docker image.
+          Example:
+            $0 build
+          Rebuild without cache:
+            $0 build --no-cache
+
+  up | start - Start the stack (schemaspy, postgres, mysql) in the background.
+               SchemaSpy is configured (via .env) to connect to one of the two
+               databases; both databases are always started. Opens the generated
+               documentation in the default browser.
+               Example:
+                 $0 start
+
+  open - Open the generated documentation in the default browser.
+
+  stop - Stops the services. Non-destructive; containers and volumes are kept
+         so the next 'start' reuses them.
+
+  down | rm - Brings down the services and removes the volumes (database data),
+              containers, and generated SchemaSpy documents. Destructive.
+EOF
+exit 1
+}
+# -----------------------------------------------------------------------------------------------------------------
+# Functions:
+# -----------------------------------------------------------------------------------------------------------------
+configureEnvironment() {
+  if [ ! -f .env ] && [ -f .env.example ]; then
+    echo -e "\nNo .env found, copying default from .env.example ...\n"
+    cp .env.example .env
+  fi
+
+  if [ -f .env ]; then
+    echo -e "\nLoading environment variables from .env ...\n"
+    set -a
+    source .env
+    set +a
+  fi
+}
+
+deleteVolumes() {
+  deleteContainerVolumes
+  deleteOutputDirectory
+  deleteConvertedMssqlSchemas
+}
+
+deleteContainerVolumes() {
+  echo "Stopping and removing any running containers ..."
+  docker compose down -v
+}
+
+convertMssqlSchemas() {
+  local source_directory="${MSSQL_INIT_SCRIPTS_DIR:-./db-init/mssql}"
+  local output_directory="${MSSQL_CONVERTED_INIT_SCRIPTS_DIR:-./generated-mssql-init}"
+
+  echo "Converting SQL Server schema scripts from: ${source_directory}"
+  "${SCRIPT_HOME}/convert-mssql-schema.sh" "${source_directory}" "${output_directory}"
+  export MSSQL_CONVERTED_INIT_SCRIPTS_DIR="${output_directory}"
+}
+
+deleteConvertedMssqlSchemas() {
+  local output_directory="${MSSQL_CONVERTED_INIT_SCRIPTS_DIR:-./generated-mssql-init}"
+
+  case "${output_directory}" in
+    ""|.|./|/)
+      echo "ERROR: Refusing to remove unsafe MSSQL_CONVERTED_INIT_SCRIPTS_DIR: ${output_directory}"
+      exit 1
+      ;;
+  esac
+
+  echo "Removing generated SQL Server schema scripts: ${output_directory}"
+  rm -rf "${output_directory}"
+}
+
+getOutputDirectory() {
+  echo "${SCHEMASPY_OUTPUT_DIR:-./output}"
+}
+
+createOutputDirectory() {
+  local output_directory
+  output_directory="$(getOutputDirectory)"
+  echo "Creating SchemaSpy output directory: ${output_directory}"
+  mkdir -p "${output_directory}"
+}
+
+waitForDocumentGeneration() {
+  local url="$1"
+  local timeout_seconds="${SCHEMASPY_GENERATION_TIMEOUT_SECONDS:-300}"
+  local elapsed_seconds=0
+
+  printf "\nWaiting for document generation to complete "
+  until curl --fail --silent --head "${url}" >/dev/null; do
+    if (( elapsed_seconds >= timeout_seconds )); then
+      echo
+      echo "ERROR: Timed out waiting for documentation at ${url}."
+      return 1
+    fi
+
+    printf "."
+    sleep 2
+    ((elapsed_seconds += 2))
+  done
+  echo
+}
+
+openInBrowser() {
+  local url="$1"
+
+  echo "Opening ${url} in your default browser ..."
+  case "${OSTYPE:-}" in
+    msys*|cygwin*) cmd.exe /c start "" "${url}" ;;
+    darwin*) open "${url}" ;;
+    linux*) xdg-open "${url}" ;;
+    *)
+      echo "Unable to detect a browser start command. Open this URL manually:"
+      echo "  ${url}"
+      ;;
+  esac
+}
+
+getSchemaSpyUrl() {
+  echo "http://localhost:${SCHEMASPY_EXPOSED_PORT:-8082}"
+}
+
+deleteOutputDirectory() {
+  local output_directory
+  output_directory="$(getOutputDirectory)"
+
+  case "${output_directory}" in
+    ""|.|./|/)
+      echo "ERROR: Refusing to remove unsafe SCHEMASPY_OUTPUT_DIR: ${output_directory}"
+      exit 1
+      ;;
+  esac
+
+  echo "Removing SchemaSpy output directory: ${output_directory}"
+  rm -rf "${output_directory}"
+}
+# =================================================================================================================
+
+pushd "${SCRIPT_HOME}" >/dev/null
+COMMAND=$(echo "${1}" | tr '[:upper:]' '[:lower:]')
+shift || true
+
+case "$COMMAND" in
+  build)
+    configureEnvironment
+    docker compose build "$@"
+    ;;
+  up|start)
+    configureEnvironment
+    createOutputDirectory
+    convertMssqlSchemas
+    docker compose up -d "$@"
+    url="$(getSchemaSpyUrl)"
+    waitForDocumentGeneration "${url}"
+    openInBrowser "${url}"
+    ;;
+  open)
+    configureEnvironment
+    url="$(getSchemaSpyUrl)"
+    waitForDocumentGeneration "${url}"
+    openInBrowser "${url}"
+    ;;
+  stop)
+    docker compose stop
+    ;;
+  rm|down)
+    configureEnvironment
+    deleteVolumes
+    ;;
+  *)
+    usage
+    ;;
+esac
+
+popd >/dev/null
